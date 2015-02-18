@@ -1,14 +1,26 @@
 # Configuration:
 #   HUBOT_AWS_ACCESS_KEY_ID
 #   HUBOT_AWS_SECRET_ACCESS_KEY
-#   HUBOT_AWS_SQS_REGIONS
-#   HUBOT_AWS_EC2_REGIONS
 #
 # Commands:
 #   hubot create bucket <name> [<acl settings> <region>] - Returns the list of s3 buckets
+#   hubot list buckets - List all buckets
+#   hubot delete bucket <name> - Deletes bucket
+#   hubot get bucket policy <name> - Gets the bucket's policy
+#   hubot delete bucket policy <name> - Deletes the bucket's policy
+#   hubot set bucket policy <name> <policy> - Set the bucket's policy to given policy
+#   hubot delete object <bucket> <object> - Delete object from a bucket
+#   hubot get bucket location <bucket> - Get AWS region of a bucket
+#   hubot list objects <bucket> - List all the objects in a bucket
+#   hubot list buckets - Lists all buckets
+#
 #
 # Author:
 #   Andrew Quitadamo
+
+#TODO: Ask to delete
+#TODO: Fix undefined in list objects
+#TODO: Add tests
 
 key = process.env.HUBOT_S3_ACCESS_KEY_ID
 secret = process.env.HUBOT_S3_SECRET_ACCESS_KEY
@@ -69,7 +81,7 @@ module.exports = (robot) ->
                 return
             msg.send "Bucket #{bucketName}'s policy was deleted successfully"
 
-    robot.respond /put bucket policy ([\w.+\-]+) (.*)/i, (msg) ->
+    robot.respond /set bucket policy ([\w.+\-]+) (.*)/i, (msg) ->
         bucketName =  msg.match[1]
         bucketPolicy = msg.match[2]
         params =
@@ -130,3 +142,12 @@ module.exports = (robot) ->
                 content = contents.pop()
                 msg.send "Name: #{content.Key}\nLast Modified: #{content.LastModified}\nSize: #{content.Size}\n\n"
             , 700
+
+    robot.respond /list buckets/i, (msg) ->
+       s3.listBuckets (error, data) ->
+            if error?
+                msg.send "Uh-oh. Something has gone wrong\n#{error}"
+                return
+            buckets = data.Buckets
+            for bucket in buckets
+                msg.send "#{bucket.Name} : #{bucket.CreationDate}"
